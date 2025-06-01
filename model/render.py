@@ -4,44 +4,42 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 import os
 import numpy as np
 
-# Path to your GLB file — using /sdcard for Termux compatibility
+# Load your model
 path = '/sdcard/math/model.glb'
 loaded = trimesh.load(path)
 
-# Output directory for rendered frames
+# Output folder
 output_dir = '/sdcard/math/frames/'
 os.makedirs(output_dir, exist_ok=True)
 
-# Create a 3D figure
+# Set up figure
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.axis('off')
 
-# Function to plot 3D line paths (if present)
+# Function to plot 3D paths (if any)
 def plot_path3d(path_obj):
     for entity in path_obj.entities:
         points = path_obj.vertices[entity.points]
         ax.add_collection3d(Line3DCollection([points], colors='cyan', linewidths=1.5))
     return path_obj.vertices
 
-# Function to plot 3D mesh with no outline and clean white color
+# Function to plot a mesh without outlines or blue
 def plot_mesh(mesh_obj):
     vertices = mesh_obj.vertices
     faces = mesh_obj.faces
 
-    # Pure white color with a bit of transparency
-    mesh_collection = Poly3DCollection(
+    mesh = Poly3DCollection(
         vertices[faces],
-        facecolors=(1, 1, 1, 0.95),  # RGBA: white, slightly transparent
-        edgecolors=(0, 0, 0, 0),     # Fully transparent edges
-        linewidths=0,
-        antialiased=False
+        facecolors=(1, 1, 1, 1),   # Solid white
+        edgecolors='none',        # Force no edges
+        linewidths=0,             # No line width
+        antialiased=False         # Prevent anti-alias glow
     )
-
-    ax.add_collection3d(mesh_collection)
+    ax.add_collection3d(mesh)
     return vertices
 
-# Extract all geometry components
+# Helper: extract individual meshes from Scene/list/single
 def extract_all_geometries(obj):
     if isinstance(obj, trimesh.Scene):
         return list(obj.dump())
@@ -52,7 +50,7 @@ def extract_all_geometries(obj):
 
 geometries = extract_all_geometries(loaded)
 
-# Loop to generate rotating view images
+# Render frames
 for i, angle in enumerate(range(0, 360, 5)):
     ax.cla()
     ax.axis('off')
