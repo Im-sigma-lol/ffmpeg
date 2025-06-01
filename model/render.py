@@ -1,85 +1,165 @@
-import trimesh                              # For loading and working with 3D models
-import matplotlib.pyplot as plt             # For plotting
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection  # For rendering 3D polygons and lines
-import os                                   # For file and directory operations
-import numpy as np                          # For handling numerical data
+import trimesh
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
+import os
+import numpy as np
 
-# Path to your 3D model file (GLB format)
-path = '/storage/emulated/0/math/model.glb'
-
-# Load the 3D model using trimesh
+# Load path (use /sdcard instead of /storage/emulated/0 for Termux compatibility)
+path = '/sdcard/math/model.glb'
 loaded = trimesh.load(path)
 
-# Directory where rendered frames will be saved
-output_dir = '/storage/emulated/0/math/frames/'
-os.makedirs(output_dir, exist_ok=True)  # Create directory if it doesn't exist
+# Output folder for frames
+output_dir = '/sdcard/math/frames/'
+os.makedirs(output_dir, exist_ok=True)
 
-# Set up a 3D figure using matplotlib
+# Create 3D plot
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.axis('off')  # Hide axis for cleaner output
+ax.axis('off')  # Turn off axis lines and labels
 
-# Function to render 3D line-based paths (for wireframe-type models or paths)
+# Function to plot 3D line paths
 def plot_path3d(path_obj):
     for entity in path_obj.entities:
-        # Extract line segment vertices from entity
         points = path_obj.vertices[entity.points]
-        # Add the line collection to the plot
         ax.add_collection3d(Line3DCollection([points], colors='cyan', linewidths=1.5))
-    return path_obj.vertices  # Return vertices for scaling
+    return path_obj.vertices
 
-# Function to render solid 3D meshes
+# Function to plot 3D mesh without outlines
 def plot_mesh(mesh_obj):
-    vertices = mesh_obj.vertices  # 3D points
-    faces = mesh_obj.faces        # Indexes into vertices forming triangles
+    vertices = mesh_obj.vertices
+    faces = mesh_obj.faces
 
-    # Create a 3D polygon collection from faces, disabling edge outlines
-    mesh_collection = Poly3DCollection(vertices[faces], alpha=0.9, edgecolors='none')
-    mesh_collection.set_facecolor((0.5, 0.5, 1, 1))  # Set face color to bluish
+    # Create the mesh collection with no edgecolor and transparent background
+    mesh_collection = Poly3DCollection(vertices[faces], 
+                                       facecolors=(0.5, 0.5, 1, 1),   # Light blue
+                                       edgecolors='none',            # Disable outlines
+                                       linewidths=0)                 # Force no outline width
 
-    # Add the mesh to the plot
     ax.add_collection3d(mesh_collection)
-    return vertices  # Return vertices for scaling
+    return vertices
 
-# Helper to extract all geometry objects (whether Scene, list, or single mesh)
+# Helper to extract all geometries from a scene or list
 def extract_all_geometries(obj):
     if isinstance(obj, trimesh.Scene):
-        return list(obj.dump())  # Flatten all geometry from scene
+        return list(obj.dump())
     elif isinstance(obj, list):
-        return obj              # Already a list of meshes
+        return obj
     else:
-        return [obj]            # Single mesh or path
+        return [obj]
 
-# Get a flat list of all geometry objects from the loaded file
+# Extract all parts from model
 geometries = extract_all_geometries(loaded)
 
-# Loop through angles from 0 to 355 in steps of 5 to generate a turntable animation
+# Generate frames while rotating the model
 for i, angle in enumerate(range(0, 360, 5)):
-    ax.cla()        # Clear the axes
-    ax.axis('off')  # Turn off the axis display
+    ax.cla()
+    ax.axis('off')
     all_vertices = []
 
-    # Plot each geometry: mesh or path
+    # Plot all geometry objects
     for geo in geometries:
         if isinstance(geo, trimesh.Trimesh):
-            v = plot_mesh(geo)  # Plot solid mesh
+            v = plot_mesh(geo)
         elif isinstance(geo, trimesh.path.path.Path3D):
-            v = plot_path3d(geo)  # Plot line-based path
+            v = plot_path3d(geo)
         else:
             continue
-        all_vertices.append(v)  # Save vertices for global scaling
+        all_vertices.append(v)
 
-    # Auto-scale plot based on all vertex data
+    # Autoscale scene based on combined vertices
     if all_vertices:
-        combined_vertices = np.vstack(all_vertices)  # Stack all vertices
-        scale = combined_vertices.flatten()          # Flatten to 1D for scaling
-        ax.auto_scale_xyz(scale, scale, scale)       # Set 3D scaling
+        combined = np.vstack(all_vertices)
+        scale = combined.flatten()
+        ax.auto_scale_xyz(scale, scale, scale)
 
-    ax.view_init(elev=30, azim=angle)  # Rotate view: elevation 30°, azimuth varies
+    # Set the view angle for rotation animation
+    ax.view_init(elev=30, azim=angle)
 
-    # Save current frame to image file
+    # Save the frame image
     frame_path = os.path.join(output_dir, f'frame_{i:03d}.png')
     plt.savefig(frame_path, dpi=200, transparent=True, bbox_inches='tight', pad_inches=0)
 
-# Optional: close the plot window after all frames are saved
+# Optional: close the figure after rendering
+plt.close(fig)import trimesh
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
+import os
+import numpy as np
+
+# Load path (use /sdcard instead of /storage/emulated/0 for Termux compatibility)
+path = '/sdcard/math/model.glb'
+loaded = trimesh.load(path)
+
+# Output folder for frames
+output_dir = '/sdcard/math/frames/'
+os.makedirs(output_dir, exist_ok=True)
+
+# Create 3D plot
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.axis('off')  # Turn off axis lines and labels
+
+# Function to plot 3D line paths
+def plot_path3d(path_obj):
+    for entity in path_obj.entities:
+        points = path_obj.vertices[entity.points]
+        ax.add_collection3d(Line3DCollection([points], colors='cyan', linewidths=1.5))
+    return path_obj.vertices
+
+# Function to plot 3D mesh without outlines
+def plot_mesh(mesh_obj):
+    vertices = mesh_obj.vertices
+    faces = mesh_obj.faces
+
+    # Create the mesh collection with no edgecolor and transparent background
+    mesh_collection = Poly3DCollection(vertices[faces], 
+                                       facecolors=(0.5, 0.5, 1, 1),   # Light blue
+                                       edgecolors='none',            # Disable outlines
+                                       linewidths=0)                 # Force no outline width
+
+    ax.add_collection3d(mesh_collection)
+    return vertices
+
+# Helper to extract all geometries from a scene or list
+def extract_all_geometries(obj):
+    if isinstance(obj, trimesh.Scene):
+        return list(obj.dump())
+    elif isinstance(obj, list):
+        return obj
+    else:
+        return [obj]
+
+# Extract all parts from model
+geometries = extract_all_geometries(loaded)
+
+# Generate frames while rotating the model
+for i, angle in enumerate(range(0, 360, 5)):
+    ax.cla()
+    ax.axis('off')
+    all_vertices = []
+
+    # Plot all geometry objects
+    for geo in geometries:
+        if isinstance(geo, trimesh.Trimesh):
+            v = plot_mesh(geo)
+        elif isinstance(geo, trimesh.path.path.Path3D):
+            v = plot_path3d(geo)
+        else:
+            continue
+        all_vertices.append(v)
+
+    # Autoscale scene based on combined vertices
+    if all_vertices:
+        combined = np.vstack(all_vertices)
+        scale = combined.flatten()
+        ax.auto_scale_xyz(scale, scale, scale)
+
+    # Set the view angle for rotation animation
+    ax.view_init(elev=30, azim=angle)
+
+    # Save the frame image
+    frame_path = os.path.join(output_dir, f'frame_{i:03d}.png')
+    plt.savefig(frame_path, dpi=200, transparent=True, bbox_inches='tight', pad_inches=0)
+
+# Optional: close the figure after rendering
 plt.close(fig)
